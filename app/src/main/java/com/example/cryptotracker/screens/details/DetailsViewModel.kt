@@ -1,8 +1,8 @@
-package com.example.cryptotracker.screens.home
+package com.example.cryptotracker.screens.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.cryptotracker.data.model.Coin
+import com.example.cryptotracker.data.model.MarketChartResponse
 import com.example.cryptotracker.data.repository.CoinRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,23 +11,19 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class DetailsViewModel @Inject constructor(
     private val repository: CoinRepository
 ) : ViewModel() {
-    private val _coins = MutableStateFlow<List<Coin>>(emptyList())
-    val coins: StateFlow<List<Coin>> = _coins
+    private val _chartData = MutableStateFlow<MarketChartResponse?>(null)
+    val chartData: StateFlow<MarketChartResponse?> = _chartData
 
-    init {
-        fetchCoins()
-    }
-
-    private fun fetchCoins() {
+    fun fetchChartData(coinId: String, days: String = "7") {
         viewModelScope.launch {
             try {
-                val coinList = repository.getCoins()
-                _coins.value = coinList
+                val response = repository.getMarketChart(coinId, days)
+                _chartData.value = response
             } catch (e: Exception) {
-                _coins.value = emptyList()
+                _chartData.value = null
             }
         }
     }

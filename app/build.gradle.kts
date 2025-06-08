@@ -2,18 +2,18 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.hilt) // Hilt plugin
-    id("kotlin-kapt") // Apply kapt plugin directly without version
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.ksp) // Replace id("kotlin-kapt")
 }
 
 android {
     namespace = "com.example.cryptotracker"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.cryptotracker"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -46,7 +46,6 @@ android {
 }
 
 dependencies {
-    // Existing dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -63,14 +62,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    // New dependencies for CryptoTracker
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging.interceptor)
     implementation(libs.hilt.android)
-    kapt(libs.hilt.compiler) // Keep for Hilt annotation processing
+    ksp(libs.hilt.compiler) // Replace kapt with ksp
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.mpandroidchart)
