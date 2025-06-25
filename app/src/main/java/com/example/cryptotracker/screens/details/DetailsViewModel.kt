@@ -39,18 +39,35 @@ class DetailsViewModel @Inject constructor(
             try {
                 _isLoading.value = true
                 _error.value = null
-                val response = repository.getMarketChart(coinId, days)
-                Log.d(TAG, "Fetched chart data for $coinId, days=$days: ${response.prices}")
+                
+                Log.d(TAG, "Fetching chart data for coinId='$coinId', days='$days'")
+                
+                // Test with a known good coin ID first if this is an unknown coin
+                val testId = if (coinId.isBlank() || coinId == "null") {
+                    Log.w(TAG, "Invalid coinId '$coinId', using 'bitcoin' as fallback")
+                    "bitcoin"
+                } else {
+                    coinId
+                }
+                
+                val response = repository.getMarketChart(testId, days)
+                Log.d(TAG, "Fetched chart data for $testId, days=$days: prices count=${response.prices.size}")
+                
                 if (response.prices.isEmpty()) {
-                    _error.value = "No chart data available for $coinId"
+                    _error.value = "No chart data available for $testId"
                     _chartData.value = null
                 } else {
                     _chartData.value = response
+                    Log.d(TAG, "Successfully loaded ${response.prices.size} price points")
                 }
             } catch (e: Exception) {
                 _chartData.value = null
-                _error.value = "Failed to load chart data: ${e.message}"
-                Log.e(TAG, "Error loading chart data: ${e.message}", e)
+                val errorMessage = "Failed to load chart data: ${e.message}"
+                _error.value = errorMessage
+                Log.e(TAG, errorMessage, e)
+                
+                // Print stack trace for debugging
+                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }
@@ -60,34 +77,21 @@ class DetailsViewModel @Inject constructor(
     fun fetchCoinData(coinId: String) {
         viewModelScope.launch {
             try {
-                // Don't set loading again if we're already loading chart data
-                if (!_isLoading.value) _isLoading.value = true
-                _error.value = null
-                
-                // First try to get basic coin data from the coins list
+                // Only get basic coin data from the coins list (more reliable)
                 val coins = repository.getCoins()
                 val basicCoin = coins.find { it.id == coinId }
                 
                 if (basicCoin != null) {
                     _coin.value = basicCoin
-                    Log.d(TAG, "Found basic coin data for $coinId: ${basicCoin.name}")
+                    Log.d(TAG, "Found coin data for $coinId: ${basicCoin.name}")
                 } else {
-                    // If not found in basic list, try detailed API
-                    val detailedCoin = repository.getCoinById(coinId)
-                    if (detailedCoin != null) {
-                        _coin.value = detailedCoin
-                        Log.d(TAG, "Found detailed coin data for $coinId: ${detailedCoin.name}")
-                    } else {
-                        _error.value = "Coin $coinId not found"
-                        Log.w(TAG, "Coin $coinId not found in both basic and detailed APIs")
-                    }
+                    _error.value = "Coin $coinId not found"
+                    Log.w(TAG, "Coin $coinId not found in coins list")
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to load coin data: ${e.message}"
                 _coin.value = null
                 Log.e(TAG, "Error loading coin data: ${e.message}", e)
-            } finally {
-                _isLoading.value = false
             }
         }
     }

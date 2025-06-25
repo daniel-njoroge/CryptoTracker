@@ -20,10 +20,8 @@ class CoinRepository @Inject constructor(
 
     suspend fun getMarketChart(id: String, days: String): MarketChartResponse {
         return withRetry {
-            val response = api.getMarketChart(id, days, interval = when (days) {
-                "1" -> "hourly"
-                else -> "daily"
-            })
+            // Don't use interval parameter as it can cause 400 errors
+            val response = api.getMarketChart(id, "usd", days)
             Log.d(TAG, "MarketChart for $id, days=$days: prices=${response.prices.size}, market_caps=${response.marketCaps.size}, total_volumes=${response.totalVolumes.size}")
             response
         }
@@ -49,9 +47,23 @@ class CoinRepository @Inject constructor(
                 return block()
             } catch (e: Exception) {
                 Log.e(TAG, "API call failed: ${e.message}", e)
-                if (e.message?.contains("429") == true && attempt < maxRetries) {
+                
+                // Log more details about the error
+                when {
+                    e.message?.contains("400") == true -> {
+                        Log.e(TAG, "Bad Request (400): Check API parameters")
+                    }
+                    e.message?.contains("429") == true -> {
+                        Log.w(TAG, "Rate limit (429): Too many requests")
+                    }
+                    e.message?.contains("404") == true -> {
+                        Log.e(TAG, "Not Found (404): Resource doesn't exist")
+                    }
+                }
+                
+                if ((e.message?.contains("429") == true || e.message?.contains("500") == true) && attempt < maxRetries) {
                     attempt++
-                    Log.d(TAG, "Rate limit hit, retrying ($attempt/$maxRetries) after ${delayMs}ms")
+                    Log.d(TAG, "Retrying ($attempt/$maxRetries) after ${delayMs}ms")
                     delay(delayMs)
                     delayMs *= 2 // Exponential backoff: 1s, 2s, 4s, etc.
                 } else {

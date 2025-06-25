@@ -23,7 +23,6 @@ interface CoinGeckoApi {
         @Path("id") id: String,
         @Query("vs_currency") currency: String = "usd",
         @Query("days") days: String = "7",
-        @Query("interval") interval: String? = null, // e.g., "hourly" for 1D, "daily" for 7D+
         @Header("x-cg-demo-api-key") apiKey: String? = null
     ): MarketChartResponse
 
