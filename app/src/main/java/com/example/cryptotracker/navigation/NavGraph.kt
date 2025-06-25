@@ -54,7 +54,7 @@ fun SetupNavGraph(navController: NavHostController) {
                 // Handle invalid coinId (e.g., navigate back or show error)
                 navController.popBackStack()
             } else {
-                DetailsScreen(coinId = coinId)
+                DetailsScreen(coinId = coinId, navController = navController)
             }
         }
     }

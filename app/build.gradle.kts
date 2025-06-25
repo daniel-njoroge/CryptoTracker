@@ -75,4 +75,10 @@ dependencies {
     implementation(libs.mpandroidchart)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    
+    // Animation and UI enhancements
+    implementation("androidx.compose.animation:animation:1.5.4")
+    implementation("androidx.compose.animation:animation-core:1.5.4")
+    implementation("androidx.compose.animation:animation-graphics:1.5.4")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
 }

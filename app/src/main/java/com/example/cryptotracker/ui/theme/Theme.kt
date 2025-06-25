@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 
 @Composable
 fun CryptoTrackerTheme(
@@ -16,20 +17,32 @@ fun CryptoTrackerTheme(
             primary = Primary,
             secondary = Secondary,
             background = BackgroundDark,
-            surface = SurfaceDark
+            surface = SurfaceDark,
+            surfaceVariant = SurfaceVariantDark,
+            onPrimary = Color.White,
+            onSecondary = Color.White,
+            onBackground = TextPrimaryDark,
+            onSurface = TextPrimaryDark,
+            onSurfaceVariant = TextSecondaryDark
         )
     } else {
         lightColorScheme(
             primary = Primary,
             secondary = Secondary,
             background = BackgroundLight,
-            surface = SurfaceLight
+            surface = SurfaceLight,
+            surfaceVariant = SurfaceVariantLight,
+            onPrimary = Color.White,
+            onSecondary = Color.White,
+            onBackground = TextPrimary,
+            onSurface = TextPrimary,
+            onSurfaceVariant = TextSecondary
         )
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = MaterialTheme.typography,
+        typography = Typography,
         content = content
     )
 }

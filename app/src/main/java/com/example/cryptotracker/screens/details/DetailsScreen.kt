@@ -1,51 +1,72 @@
 package com.example.cryptotracker.screens.details
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.TrendingUp
+import androidx.compose.material.icons.filled.TrendingDown
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import com.example.cryptotracker.data.model.Coin
 import com.example.cryptotracker.ui.theme.Primary
+import com.example.cryptotracker.ui.theme.SuccessGreen
+import com.example.cryptotracker.ui.theme.ErrorRed
+import androidx.compose.ui.graphics.toArgb
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel()) {
-    val chartData = viewModel.chartData.collectAsState().value
-    val selectedRange = viewModel.selectedRange.collectAsState().value
-    val isLoading = viewModel.isLoading.collectAsState().value
-    val error = viewModel.error.collectAsState().value
-    val coin = viewModel.coin.collectAsState().value
+fun DetailsScreen(
+    coinId: String, 
+    navController: NavController,
+    viewModel: DetailsViewModel = hiltViewModel()
+) {
+    val chartData by viewModel.chartData.collectAsState()
+    val selectedRange by viewModel.selectedRange.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    val coin by viewModel.coin.collectAsState()
 
-    // Fetch chart and coin data
+    // Fetch the necessary data
     viewModel.fetchChartData(coinId)
     viewModel.fetchCoinData(coinId)
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text(coin?.name ?: "Coin Details") },
+            navigationIcon = {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                }
+            })
+        }
+    ) { padding ->
         Column(
             modifier = Modifier
+                .padding(padding)
                 .padding(16.dp)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Coin Info
-            if (coin != null) {
+            coin?.let { currentCoin ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -53,38 +74,102 @@ fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel())
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     AsyncImage(
-                        model = coin.image,
-                        contentDescription = "${coin.name ?: "Coin"} logo",
+                        model = currentCoin.image,
+                        contentDescription = "${currentCoin.name ?: "Coin"} logo",
                         modifier = Modifier
                             .size(48.dp)
                             .padding(end = 16.dp)
                     )
                     Column {
                         Text(
-                            text = coin.name ?: "Unknown",
+                            text = currentCoin.name ?: "Unknown",
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = coin.currentPrice?.let { "$${String.format("%.2f", it)}" } ?: "N/A",
+                            text = currentCoin.currentPrice?.let { "$${String.format("%.2f", it)}" } ?: "N/A",
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = coin.priceChange24h?.let { "24h: ${String.format("%.2f", it)}%" } ?: "N/A",
+                            text = currentCoin.priceChange24h?.let { "24h: ${String.format("%.2f", it)}%" } ?: "N/A",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = coin.priceChange24h?.let { if (it >= 0) androidx.compose.ui.graphics.Color(0xFF4CAF50) else androidx.compose.ui.graphics.Color(0xFFF44336) } ?: MaterialTheme.colorScheme.onBackground
+                            color = currentCoin.priceChange24h?.let { if (it >= 0) SuccessGreen else ErrorRed } ?: MaterialTheme.colorScheme.onBackground
                         )
                         Text(
-                            text = coin.high24h?.let { "24h High: $${String.format("%.2f", it)}" } ?: "N/A",
+                            text = currentCoin.high24h?.let { "24h High: $${String.format("%.2f", it)}" } ?: "N/A",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = coin.low24h?.let { "24h Low: $${String.format("%.2f", it)}" } ?: "N/A",
+                            text = currentCoin.low24h?.let { "24h Low: $${String.format("%.2f", it)}" } ?: "N/A",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                    }
+                }
+                
+                // Market Statistics Card
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Market Statistics",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                MarketStatItem(
+                                    label = "Market Cap Rank",
+                                    value = currentCoin.marketCapRank?.let { "#$it" } ?: "N/A"
+                                )
+                                MarketStatItem(
+                                    label = "Market Cap",
+                                    value = currentCoin.marketCap?.let { formatLargeNumber(it) } ?: "N/A"
+                                )
+                                MarketStatItem(
+                                    label = "24h Volume",
+                                    value = currentCoin.totalVolume?.let { formatLargeNumber(it) } ?: "N/A"
+                                )
+                                MarketStatItem(
+                                    label = "All Time High",
+                                    value = currentCoin.allTimeHigh?.let { "$${String.format("%.2f", it)}" } ?: "N/A"
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                MarketStatItem(
+                                    label = "Circulating Supply",
+                                    value = currentCoin.circulatingSupply?.let { formatLargeNumber(it.toLong()) } ?: "N/A"
+                                )
+                                MarketStatItem(
+                                    label = "Total Supply",
+                                    value = currentCoin.totalSupply?.let { formatLargeNumber(it.toLong()) } ?: "N/A"
+                                )
+                                MarketStatItem(
+                                    label = "Max Supply",
+                                    value = currentCoin.maxSupply?.let { formatLargeNumber(it.toLong()) } ?: "∞"
+                                )
+                                MarketStatItem(
+                                    label = "All Time Low",
+                                    value = currentCoin.allTimeLow?.let { "$${String.format("%.2f", it)}" } ?: "N/A"
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -155,7 +240,7 @@ fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel())
                         AndroidView(
                             factory = { context ->
                                 LineChart(context).apply {
-                                    setBackgroundColor(androidx.compose.ui.graphics.Color.White.value.toInt())
+                                    setBackgroundColor(androidx.compose.ui.graphics.Color.White.toArgb())
                                     description.isEnabled = false
                                     setTouchEnabled(true)
                                     isDragEnabled = true
@@ -164,11 +249,11 @@ fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel())
                                     xAxis.apply {
                                         position = XAxis.XAxisPosition.BOTTOM
                                         setDrawGridLines(false)
-                                        textColor = androidx.compose.ui.graphics.Color.Black.value.toInt()
+                                        textColor = androidx.compose.ui.graphics.Color.Black.toArgb()
                                     }
-                                    axisLeft.textColor = androidx.compose.ui.graphics.Color.Black.value.toInt()
+                                    axisLeft.textColor = androidx.compose.ui.graphics.Color.Black.toArgb()
                                     axisRight.isEnabled = false
-                                    legend.textColor = androidx.compose.ui.graphics.Color.Black.value.toInt()
+                                    legend.textColor = androidx.compose.ui.graphics.Color.Black.toArgb()
                                 }
                             },
                             update = { chart ->
@@ -176,12 +261,12 @@ fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel())
                                     Entry(index.toFloat(), price[1].toFloat())
                                 }
                                 val dataSet = LineDataSet(entries, "Price (USD)").apply {
-                                    color = Primary.value.toInt()
+                                    color = Primary.toArgb()
                                     setDrawCircles(false)
                                     lineWidth = 2f
                                     setDrawValues(false)
                                     setDrawFilled(true)
-                                    fillColor = Primary.value.toInt()
+                                    fillColor = Primary.toArgb()
                                 }
                                 chart.data = LineData(dataSet)
                                 chart.invalidate()
@@ -195,5 +280,34 @@ fun DetailsScreen(coinId: String, viewModel: DetailsViewModel = hiltViewModel())
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MarketStatItem(label: String, value: String) {
+    Column(
+        modifier = Modifier.padding(vertical = 4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+fun formatLargeNumber(number: Long): String {
+    return when {
+        number >= 1_000_000_000_000 -> "$${String.format("%.1f", number / 1_000_000_000_000.0)}T"
+        number >= 1_000_000_000 -> "$${String.format("%.1f", number / 1_000_000_000.0)}B"
+        number >= 1_000_000 -> "$${String.format("%.1f", number / 1_000_000.0)}M"
+        number >= 1_000 -> "$${String.format("%.1f", number / 1_000.0)}K"
+        else -> "$$number"
     }
 }

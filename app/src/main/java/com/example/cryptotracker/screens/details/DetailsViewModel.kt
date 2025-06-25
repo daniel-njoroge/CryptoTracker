@@ -60,14 +60,27 @@ class DetailsViewModel @Inject constructor(
     fun fetchCoinData(coinId: String) {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
+                // Don't set loading again if we're already loading chart data
+                if (!_isLoading.value) _isLoading.value = true
                 _error.value = null
-                val coin = repository.getCoinById(coinId)
-                if (coin == null) {
-                    _error.value = "Coin $coinId not found"
-                    Log.w(TAG, "Coin $coinId not found")
+                
+                // First try to get basic coin data from the coins list
+                val coins = repository.getCoins()
+                val basicCoin = coins.find { it.id == coinId }
+                
+                if (basicCoin != null) {
+                    _coin.value = basicCoin
+                    Log.d(TAG, "Found basic coin data for $coinId: ${basicCoin.name}")
                 } else {
-                    _coin.value = coin
+                    // If not found in basic list, try detailed API
+                    val detailedCoin = repository.getCoinById(coinId)
+                    if (detailedCoin != null) {
+                        _coin.value = detailedCoin
+                        Log.d(TAG, "Found detailed coin data for $coinId: ${detailedCoin.name}")
+                    } else {
+                        _error.value = "Coin $coinId not found"
+                        Log.w(TAG, "Coin $coinId not found in both basic and detailed APIs")
+                    }
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to load coin data: ${e.message}"
