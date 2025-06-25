@@ -13,7 +13,7 @@ Stay informed with live price updates, market cap stats, volume, and interactive
 
 ## 📸 Screenshots
 
-**To be added
+![WhatsApp Image 2025-06-11 at 12 26 29 AM](https://github.com/user-attachments/assets/79423a1f-1c24-4725-82d4-543b4a1aceaa)
 
 ---
 
