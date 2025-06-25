@@ -15,7 +15,7 @@ class CoinRepository @Inject constructor(
     private val TAG = "CoinRepository"
 
     suspend fun getCoins(): List<Coin> {
-        return withRetry { api.getCoins() }.filterNotNull()
+        return withRetry { api.getCoins() }
     }
 
     suspend fun getMarketChart(id: String, days: String): MarketChartResponse {
@@ -24,18 +24,6 @@ class CoinRepository @Inject constructor(
             val response = api.getMarketChart(id, "usd", days)
             Log.d(TAG, "MarketChart for $id, days=$days: prices=${response.prices.size}, market_caps=${response.marketCaps.size}, total_volumes=${response.totalVolumes.size}")
             response
-        }
-    }
-
-    suspend fun getCoinById(id: String): Coin? {
-        return withRetry { api.getCoinDetails(id) }
-    }
-
-    suspend fun searchCoins(query: String): List<Coin> {
-        val coins = withRetry { api.getCoins() }.filterNotNull()
-        return coins.filter { coin ->
-            coin.name?.lowercase()?.contains(query.lowercase()) == true ||
-                    coin.symbol?.lowercase()?.contains(query.lowercase()) == true
         }
     }
 

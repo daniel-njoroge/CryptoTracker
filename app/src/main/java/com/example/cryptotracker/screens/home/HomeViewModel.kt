@@ -48,7 +48,7 @@ class HomeViewModel @Inject constructor(
                     _coins.value = emptyList()
                     _error.value = "Failed to load coins: ${e.message}"
                 }
-                delay(60_000) // Refresh every 60 seconds to avoid rate limits
+                delay(120_000) // Refresh every 2 minutes to reduce load
             }
         }
     }

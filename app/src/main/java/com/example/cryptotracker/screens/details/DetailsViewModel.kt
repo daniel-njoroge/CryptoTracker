@@ -42,32 +42,45 @@ class DetailsViewModel @Inject constructor(
                 
                 Log.d(TAG, "Fetching chart data for coinId='$coinId', days='$days'")
                 
-                // Test with a known good coin ID first if this is an unknown coin
-                val testId = if (coinId.isBlank() || coinId == "null") {
-                    Log.w(TAG, "Invalid coinId '$coinId', using 'bitcoin' as fallback")
-                    "bitcoin"
-                } else {
-                    coinId
+                // Validate coinId
+                if (coinId.isBlank() || coinId == "null") {
+                    _error.value = "Invalid coin ID provided"
+                    _chartData.value = null
+                    return@launch
                 }
                 
-                val response = repository.getMarketChart(testId, days)
-                Log.d(TAG, "Fetched chart data for $testId, days=$days: prices count=${response.prices.size}")
+                val response = repository.getMarketChart(coinId, days)
+                Log.d(TAG, "Fetched chart data for $coinId, days=$days: prices count=${response.prices.size}")
                 
+                // Validate response data
                 if (response.prices.isEmpty()) {
-                    _error.value = "No chart data available for $testId"
+                    _error.value = "No chart data available for this coin"
                     _chartData.value = null
                 } else {
-                    _chartData.value = response
-                    Log.d(TAG, "Successfully loaded ${response.prices.size} price points")
+                    // Validate each price point
+                    val validPrices = response.prices.filter { pricePoint ->
+                        pricePoint.size >= 2 && pricePoint[1] > 0
+                    }
+                    
+                    if (validPrices.isEmpty()) {
+                        _error.value = "Chart data contains invalid price information"
+                        _chartData.value = null
+                    } else {
+                        val filteredResponse = response.copy(prices = validPrices)
+                        _chartData.value = filteredResponse
+                        Log.d(TAG, "Successfully loaded ${validPrices.size} valid price points")
+                    }
                 }
             } catch (e: Exception) {
                 _chartData.value = null
-                val errorMessage = "Failed to load chart data: ${e.message}"
+                val errorMessage = when {
+                    e.message?.contains("404") == true -> "Coin not found"
+                    e.message?.contains("429") == true -> "Too many requests, please wait"
+                    e.message?.contains("timeout") == true -> "Request timed out, please retry"
+                    else -> "Failed to load chart data: ${e.message}"
+                }
                 _error.value = errorMessage
                 Log.e(TAG, errorMessage, e)
-                
-                // Print stack trace for debugging
-                e.printStackTrace()
             } finally {
                 _isLoading.value = false
             }

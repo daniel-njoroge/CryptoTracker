@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.cryptotracker"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -72,13 +72,17 @@ dependencies {
     ksp(libs.hilt.compiler) // Replace kapt with ksp
     implementation(libs.hilt.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.mpandroidchart)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     
-    // Animation and UI enhancements
+    // Modern Charts and UI enhancements
+    implementation("co.yml:ycharts:2.1.0")
     implementation("androidx.compose.animation:animation:1.5.4")
     implementation("androidx.compose.animation:animation-core:1.5.4")
     implementation("androidx.compose.animation:animation-graphics:1.5.4")
     implementation("androidx.compose.material:material-icons-extended:1.5.4")
+    
+    // Additional UI libraries
+    implementation("com.airbnb.android:lottie-compose:6.1.0")
+    implementation("androidx.compose.material3:material3-window-size-class:1.1.2")
 }
